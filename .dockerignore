@@ -1,0 +1,8 @@
+# Only application source and tests enter the build context.
+**
+!Dockerfile
+!pyproject.toml
+!app/
+!app/**/*.py
+!tests/
+!tests/**/*.py

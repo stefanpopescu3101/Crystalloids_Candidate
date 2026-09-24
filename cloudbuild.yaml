@@ -1,0 +1,65 @@
+steps:
+  - id: build-test-image
+    name: gcr.io/cloud-builders/docker
+    args: [build, --target, test, -t, 'posts-tests:$BUILD_ID', .]
+
+  - id: test
+    name: gcr.io/cloud-builders/docker
+    args: [run, --rm, 'posts-tests:$BUILD_ID']
+
+  - id: build-runtime-image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --target
+      - runtime
+      - -t
+      - '${_ARTIFACT_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID'
+      - .
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '${_ARTIFACT_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID'
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '${_SERVICE}'
+      - '--project=$PROJECT_ID'
+      - '--region=${_REGION}'
+      - '--image=${_ARTIFACT_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID'
+      - '--service-account=${_RUNTIME_SERVICE_ACCOUNT}'
+      - '--no-allow-unauthenticated'
+      - '--add-custom-audiences=${_CLI_TOKEN_AUDIENCE}'
+      - '--set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID,FIRESTORE_DATABASE=${_DATABASE},POSTS_COLLECTION=posts,COMMENT_EVENTS_TOPIC=${_COMMENT_EVENTS_TOPIC},ALLOW_GCLOUD_DEV_TOKENS=true'
+      - '--port=8080'
+      - '--cpu=1'
+      - '--memory=512Mi'
+      - '--min-instances=0'
+      - '--max-instances=2'
+      - '--concurrency=20'
+      - '--timeout=60s'
+      - --quiet
+
+images:
+  - '${_ARTIFACT_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID'
+
+substitutions:
+  _REGION: europe-west4
+  _ARTIFACT_REGION: europe-west1
+  _REPOSITORY: stefantest-repo
+  _SERVICE: stefan-popescu-posts
+  _DATABASE: stefan-database
+  _COMMENT_EVENTS_TOPIC: stefan-comments-topic
+  # Audience used by this workstation's CLI login; this is a public identifier.
+  _CLI_TOKEN_AUDIENCE: 681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com
+  _RUNTIME_SERVICE_ACCOUNT: stefanservice@crystalloids-candidates.iam.gserviceaccount.com
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

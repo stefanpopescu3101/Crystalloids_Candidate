@@ -1,0 +1,10 @@
+# Explicit allowlist: no .env, Git history, credentials, or local virtualenv.
+**
+!Dockerfile
+!.dockerignore
+!cloudbuild.yaml
+!pyproject.toml
+!app/
+!app/**/*.py
+!tests/
+!tests/**/*.py
