@@ -171,6 +171,10 @@ Submitting locally uploads the current source; it does not create a Git trigger 
 push commits to GitHub. Change resource settings through the substitutions at the
 bottom of `cloudbuild.yaml` or `gcloud builds submit --substitutions=...`.
 
+The `stefan-posts-main-deploy` trigger runs this pipeline automatically for each push
+to the `main` branch of `stefanpopescu3101/Crystalloids_Candidate`. A failed build or
+test leaves the previously healthy Cloud Run revision serving traffic.
+
 The build identity needs permission to push to the repository, deploy Cloud Run,
 and act as the runtime service account. The runtime service account needs
 `roles/datastore.user` on the intended database (or an appropriate project grant).
